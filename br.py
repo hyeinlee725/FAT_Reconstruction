@@ -3,7 +3,6 @@ from byte_buffer2 import ByteBuffer2
 
 class BootRecord:
     def __init__(self, buffer):
-        # 주요 영역의 위치, 크기 - 메타데이터 정의
         data = ByteBuffer2(buffer)
         data.offset = 0x0b
         self.sector_size = data.get_uint2_le()
