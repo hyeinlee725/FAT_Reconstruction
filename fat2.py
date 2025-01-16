@@ -28,9 +28,6 @@ class FAT:
 
         return cluster_chain
 
-    def get_data_area_address(self, cluster_num):
-        return self.br.data_area + (cluster_num - 2) * self.br.cluster_size
-
 if __name__ == "__main__":
     with open("./FAT32_simple1.mdf", "rb") as file:
         init_addr = file.read(0x200)
@@ -38,13 +35,12 @@ if __name__ == "__main__":
 
         file.seek(br.fat_area_addr)
         fat_data = file.read(br.fat_area_size)
-
-        fat = FAT(br, fat_data)
+        fat = FAT(fat_data, br)
 
         start_cluster = 6
         cluster_chain = fat.get_cluster_chain(start_cluster)
 
         print(f"Cluster Chain: {cluster_chain}")
         for cluster in cluster_chain:
-            data_addr = fat.get_data_area_address(cluster)
+            data_addr = br.root_dir_addr(cluster)
             print(f"Cluster {cluster} Data Address: {hex(data_addr)}")
