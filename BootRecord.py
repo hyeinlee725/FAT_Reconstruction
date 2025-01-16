@@ -1,4 +1,4 @@
-#!/usr/bin/eenv python
+#!/usr/bin/env python
 from byte_buffer2 import ByteBuffer2
 
 class BootRecord:
