@@ -32,7 +32,7 @@ class Dentry:
         return (f"Name: {self.name}.{self.extension}\n"
                 f"Attribute: {hex(self.attr)}\n"
                 f"Cluster: {self.cluster_no()}\n"
-                f"File Size: {self.file_size} bytes\n"
+                f"File Size: {hex(self.file_size)} bytes\n"
                 f"Directory: {self.is_dir()}\n"
                 f"File: {self.is_file()}\n"
                 f"Volume: {self.is_vol()}\n"
