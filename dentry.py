@@ -43,9 +43,11 @@ class Dentry:
 
 # Test Case
 if __name__ == "__main__":
-     with open("./FAT32_simple1.mdf", "rb") as file:
+    with open("./FAT32_simple1.mdf", "rb") as file:
         offsets = [0x400080, 0x404040]
         dir_buffers = [file.read(32) for offset in offsets for _ in [file.seek(offset)]]
-        dentries = [Dentry(buffer) for buffer in dir_buffers]
-        for entry in dentries:
-            print(str(entry))
+        dentries = [Dentry(buf) for buf in dir_buffers]
+        res = Dentry.dentries_class(dentries, key_func=lambda entry: str(entry) + "\n", init_val="")
+        print(res)
+
+
