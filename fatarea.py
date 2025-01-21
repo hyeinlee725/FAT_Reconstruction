@@ -26,7 +26,7 @@ class FatArea:
         return reduce(lambda acc, cur: f"{acc}, {hex(cur)}", res, "")
  
 if __name__ == "__main__":
-    file = open("../data/fat32.mdf", 'rb')
+    file = open("./FAT32_simple1.mdf", 'rb')
     file.seek(0x215c00)
     b0 = file.read(0x200)
     fat0 = FatArea(b0)
