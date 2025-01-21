@@ -4,7 +4,7 @@ from fat32 import *
  
 import pprint
  
-fat32 = Fat32("../data/fat32.mdf")
+fat32 = Fat32("./FAT32_simple1.mdf")
 fs = fat32.build_filesystem()
  
 pprint.pp(fs.nodes.keys())
