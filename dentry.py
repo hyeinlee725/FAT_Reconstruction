@@ -1,10 +1,10 @@
-#!/usr/bin/env python
 from byte_buffer2 import ByteBuffer2
 from br import BootRecord
 
 class Dentry:
-    def __init__(self, buffer):
+    def __init__(self, buffer, boot_record):
         self.data = ByteBuffer2(buffer)
+        self.boot_record = boot_record
         self._parse_entry()
 
     def _parse_entry(self):
@@ -18,9 +18,9 @@ class Dentry:
         cluster_lo = self.data.get_uint2_le()
         self.cluster_no = hex((cluster_lo << 8) | cluster_hi)
         self.file_size = self.data.get_uint4_le()
+        self.alloc_size = self._calculate_alloc_size()
         if self.is_file():
             self.name = f"{self.name}.{extension}" if extension else self.name
-        self.alloc_size = self._calculate_alloc_size()
 
     def _calculate_alloc_size(self):
         cluster_size = self.boot_record.cluster_size
@@ -42,7 +42,6 @@ class Dentry:
         return (f"Name: {self.name}\n"
                 f"Attribute: {hex(self.attr)}\n"
                 f"Cluster: {self.cluster_no}\n"
-                f"File Size: {hex(self.file_size)} bytes\n"
                 f"Allocated Size: {hex(self.alloc_size)} bytes\n"
                 f"Directory: {self.is_dir()}\n"
                 f"File: {self.is_file()}\n"
@@ -51,8 +50,7 @@ class Dentry:
 
 if __name__ == "__main__":
     with open("./FAT32_simple1.mdf", "rb") as file:
-        init_addr = file.read(0x200)
-        br = BootRecord(init_addr)
+        br = BootRecord(file.read(0x200))
         offsets = [0x400080, 0x404040]
         dentries = [Dentry(file.read(32), br) for offset in offsets for _ in [file.seek(offset)]]
         for entry in dentries:
