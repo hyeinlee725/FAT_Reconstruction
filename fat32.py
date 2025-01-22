@@ -34,7 +34,7 @@ class Fat32:
             file.seek(dir_addr)
             while True:
                 buffer = file.read(32)
-                if len(buffer) == 0:
+                if len(buffer) < 32:
                     break
                 dentry = Dentry(buffer)
                 dentries.append(dentry)
