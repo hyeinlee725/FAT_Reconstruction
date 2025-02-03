@@ -50,8 +50,8 @@ if __name__ == "__main__":
             child_node = Node("child_of_400080", True, node1)
             node1.add_child(child_node)
         
-        print(f"Node at {hex(offsets[0])}: {node1}, is_dir={node1.is_dir}")
+        print(f"Node at {hex(offsets[0])}: {node1}")
         if node1.is_dir:
             print(f"Children of node1: {node1.children}")
         
-        print(f"Node at {hex(offsets[1])}: {node2}, is_dir={node2.is_dir}")
+        print(f"Node at {hex(offsets[1])}: {node2}")
