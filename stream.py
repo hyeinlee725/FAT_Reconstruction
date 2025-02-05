@@ -10,7 +10,7 @@ class NodeStream:
         self.dentry = dentry
         self.boot_record = boot_record
         self.fat_area = fat_area
-        self.current_offset = 0
+        self.offset = 0
         self.size = dentry.file_size
         self.extents = self.calculate_extents()
     
@@ -23,17 +23,17 @@ class NodeStream:
     
     def seek(self, offset, whence=0) -> int:
         if whence == 0:
-            self.current_offset = offset
+            self.offset = offset
         elif whence == 1:
-            self.current_offset += offset
+            self.offset += offset
         elif whence == 2:
-            self.current_offset = max(0, self.size - offset)
-        return self.current_offset
+            self.offset = max(0, self.size - offset)
+        return self.offset
 
     def read(self, size):
         data = bytearray()
-        remaining = min(size, self.size - self.current_offset)
-        read_position = self.current_offset
+        remaining = min(size, self.size - self.offset)
+        read_position = self.offset
 
         for extent in self.extents:
             if remaining <= 0:
@@ -55,7 +55,7 @@ class NodeStream:
                 remaining -= read_size
                 read_position += read_size
         
-        self.current_offset = read_position
+        self.offset = read_position
         return bytes(data)
 
 if __name__ == "__main__":
