@@ -1,4 +1,3 @@
-### Node.py
 #!/usr/bin/env python
 from enum import Enum
 from extent import Extent
