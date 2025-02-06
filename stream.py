@@ -1,75 +1,84 @@
+### Node.py
 #!/usr/bin/env python
+from enum import Enum
 from extent import Extent
 from dentry import Dentry
 from br import BootRecord
-from fatarea import FatArea
 
-class NodeStream:
-    def __init__(self, file, dentry, boot_record, fat_area):
-        self.file = file
-        self.dentry = dentry
-        self.boot_record = boot_record
-        self.fat_area = fat_area
-        self.offset = 0
-        self.size = dentry.file_size
-        self.extents = self.calculate_extents()
-    
-    def calculate_extents(self):
-        start_cluster = int(self.dentry.cluster_no, 16) & 0xFFFF
-        if start_cluster < 2 or start_cluster >= len(self.fat_area.fat):
-            return []
-        clusters = self.fat_area.all_clusters(start_cluster)
-        return [Extent(self.boot_record.root_dir_addr(cluster), self.boot_record.cluster_size) for cluster in clusters]
-    
-    def seek(self, offset, whence=0) -> int:
-        if whence == 0:
-            self.offset = offset
-        elif whence == 1:
-            self.offset += offset
-        elif whence == 2:
-            self.offset = max(0, self.size - offset)
-        return self.offset
+class NodeType(Enum):
+    File = 1
+    Dir = 2
+    SymLink = 3
+    HardLink = 4
 
-    def read(self, size):
-        data = bytearray()
-        remaining = min(size, self.size - self.offset)
-        read_position = self.offset
+class State(Enum):
+    Normal = 1
+    Deleted = 2
 
-        for extent in self.extents:
-            if remaining <= 0:
-                break
+class Node:
+    def __init__(self, name, stream=None, type=NodeType.File, stat=State.Normal) -> None:
+        self.name = name
+        self.path = name
+        self.stream = stream
+        self.alloc_size = stream.alloc_size if stream else 0 
+        self.actual_size = stream.file_size if stream else 0
+        self.parent = None
+        self.children = []
+        self.type = type
+        self.stat = stat
 
-            extent_start = extent.start
-            extent_end = extent.start + extent.size
+    def is_file(self):
+        return self.type == NodeType.File
 
-            if read_position >= extent_end:
-                continue
-            
-            se = max(extent_start, read_position)
-            ee = min(extent_end, se + remaining)
-            read_size = max(0, ee - se)
+    def is_dir(self):
+        return self.type == NodeType.Dir
 
-            if read_size > 0:
-                self.file.seek(se)
-                data.extend(self.file.read(read_size))
-                remaining -= read_size
-                read_position += read_size
-        
-        self.offset = read_position
-        return bytes(data)
+    def is_expandable(self):
+        return self.is_dir()
+
+    def is_root(self):
+        return self.parent is None
+
+    def add_child(self, node):
+        node.parent = self
+        self.children.append(node)
+
+    def clear_children(self):
+        self.children.clear()
+
+    def read_all(self):
+        if self.is_file() and self.stream:
+            return self.stream.read(self.actual_size)
+        return None
+
+    def export_to(self, path):
+        if self.is_file() and self.stream:
+            with open(path, "wb") as f:
+                f.write(self.read_all())
+
+    def __str__(self) -> str:
+        return f"path: {self.path}, size: {hex(self.actual_size)}, type: {self.type.name}"
 
 if __name__ == "__main__":
     with open("./FAT32_simple1.mdf", "rb") as file:
-        boot_record = BootRecord(file.read(0x200))
-        file.seek(boot_record.fat_area_addr)
-        fat_area = FatArea(file.read(boot_record.fat_area_size))
-        
-        for offset in [0x400080, 0x404040]:
+        init_addr = file.read(0x200)
+        boot_record = BootRecord(init_addr)
+
+        offsets = [0x400080, 0x404040]
+        dentries = []
+        for offset in offsets:
             file.seek(offset)
-            dentry = Dentry(file.read(32), boot_record)
-            if dentry.is_file():
-                node_stream = NodeStream(file, dentry, boot_record, fat_area)
-                node_stream.seek(0)
-                data_read = node_stream.read(node_stream.size)
-                print(f"Stream data read for {dentry.name} (first 64 bytes in hex):", data_read[:64].hex())
-                print(f"Total data read size: {len(data_read)} / Expected file size: {node_stream.size}")
+            buffer = file.read(32)
+            dentries.append(Dentry(buffer, boot_record))
+
+        root = Node("root", None, NodeType.Dir)
+        node1 = Node("node_400080", dentries[0] if dentries[0].is_file() else None, NodeType.Dir if dentries[0].is_dir() else NodeType.File)
+        node2 = Node("node_404040", dentries[1] if dentries[1].is_file() else None, NodeType.Dir if dentries[1].is_dir() else NodeType.File)
+
+        root.add_child(node1)
+        root.add_child(node2)
+
+        print("File System Structure:")
+        print(root)
+        for child in root.children:
+            print(f" - {child}")
