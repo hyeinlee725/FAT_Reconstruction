@@ -1,3 +1,4 @@
+### Node.py
 #!/usr/bin/env python
 from enum import Enum
 from extent import Extent
@@ -20,7 +21,7 @@ class Node:
         self.path = name
         self.stream = stream
         self.alloc_size = stream.alloc_size if stream else 0 
-        self.size = stream.file_size if stream else 0
+        self.actual_size = stream.file_size if stream else 0
         self.parent = None
         self.children = []
         self.type = type
@@ -47,7 +48,7 @@ class Node:
 
     def read_all(self):
         if self.is_file() and self.stream:
-            return self.stream.read(self.size)
+            return self.stream.read(self.actual_size)
         return None
 
     def export_to(self, path):
@@ -56,7 +57,7 @@ class Node:
                 f.write(self.read_all())
 
     def __str__(self) -> str:
-        return f"path: {self.path}, size: {hex(self.size)}, type: {self.type.name}"
+        return f"path: {self.path}, size: {hex(self.actual_size)}, type: {self.type.name}"
 
 if __name__ == "__main__":
     with open("./FAT32_simple1.mdf", "rb") as file:
